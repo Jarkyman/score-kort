@@ -5,8 +5,9 @@ import { jsonResponse, errorResponse } from "../../_shared";
  * GET /api/clubs/:clubId/courses
  * Lists all courses for a given club.
  */
-export const onRequestGet: PagesFunction<Env> = async ({ params, env }) => {
+export const onRequestGet: PagesFunction<Env> = async ({ request, params, env }) => {
     const clubId = params["clubId"];
+    const parsedId = typeof clubId === "string" ? parseInt(clubId, 10) : Number(clubId);
 
     try {
         const courses = await env.DB.prepare(
@@ -21,7 +22,10 @@ export const onRequestGet: PagesFunction<Env> = async ({ params, env }) => {
             .bind(clubId)
             .all();
 
-        return jsonResponse({ courses: courses.results });
+        return jsonResponse({
+            club_id: parsedId,
+            courses: courses.results || []
+        }, 200, 300, request.headers.get("Origin"));
     } catch (e) {
         return errorResponse("Database error: " + (e instanceof Error ? e.message : String(e)), 500);
     }

@@ -8,7 +8,7 @@ import { jsonResponse, errorResponse } from "../../_shared";
  * - All available tees
  * - Holes 1-18 with par, hcp, and lengths for EVERY tee
  */
-export const onRequestGet: PagesFunction<Env> = async ({ params, env }) => {
+export const onRequestGet: PagesFunction<Env> = async ({ request, params, env }) => {
     const courseId = params["courseId"];
 
     try {
@@ -89,8 +89,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ params, env }) => {
             course,
             tees,
             holes: holesWithLengths
-        });
-
+        }, 200, 300, request.headers.get("Origin"));
     } catch (e) {
         return errorResponse("Database error: " + (e instanceof Error ? e.message : String(e)), 500);
     }

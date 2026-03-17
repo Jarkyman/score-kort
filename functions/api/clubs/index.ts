@@ -45,7 +45,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
                 total,
                 totalPages: Math.ceil(total / limit),
             },
-        });
+        }, 200, 300, request.headers.get("Origin"));
     } catch (e) {
         return errorResponse("Database error: " + (e instanceof Error ? e.message : String(e)), 500);
     }

@@ -5,7 +5,7 @@ import { jsonResponse, errorResponse } from "../_shared";
  * GET /api/clubs/:clubId
  * Returns a single club with all its details.
  */
-export const onRequestGet: PagesFunction<Env> = async ({ params, env }) => {
+export const onRequestGet: PagesFunction<Env> = async ({ request, params, env }) => {
     const clubId = params["clubId"];
 
     try {
@@ -26,7 +26,10 @@ export const onRequestGet: PagesFunction<Env> = async ({ params, env }) => {
             .bind(clubId)
             .all();
 
-        return jsonResponse({ ...club, courses: courses.results });
+        return jsonResponse({
+            ...club,
+            courses: courses.results || []
+        }, 200, 300, request.headers.get("Origin"));
     } catch (e) {
         return errorResponse("Database error: " + (e instanceof Error ? e.message : String(e)), 500);
     }

@@ -5,8 +5,9 @@ import { jsonResponse, errorResponse } from "../../_shared";
  * GET /api/courses/:courseId/tees
  * Returns all tees for a course with their length data.
  */
-export const onRequestGet: PagesFunction<Env> = async ({ params, env }) => {
+export const onRequestGet: PagesFunction<Env> = async ({ request, params, env }) => {
     const courseId = params["courseId"];
+    const parsedId = typeof courseId === "string" ? parseInt(courseId, 10) : Number(courseId);
 
     try {
         const tees = await env.DB.prepare(
@@ -15,7 +16,10 @@ export const onRequestGet: PagesFunction<Env> = async ({ params, env }) => {
             .bind(courseId)
             .all();
 
-        return jsonResponse({ tees: tees.results });
+        return jsonResponse({
+            course_id: parsedId,
+            tees: tees.results || []
+        }, 200, 300, request.headers.get("Origin"));
     } catch (e) {
         return errorResponse("Database error: " + (e instanceof Error ? e.message : String(e)), 500);
     }

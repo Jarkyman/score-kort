@@ -26,6 +26,7 @@ export default function RequestPage() {
 
     const [message, setMessage] = useState("");
     const [contact, setContact] = useState("");
+    const [websiteUrl, setWebsiteUrl] = useState(""); // Honeypot field
     const [submitting, setSubmitting] = useState(false);
     const [submitted, setSubmitted] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -81,6 +82,7 @@ export default function RequestPage() {
                     course_id: selectedCourseId,
                     user_message: message.trim(),
                     user_contact: contact.trim() || undefined,
+                    website_url: websiteUrl, // Honeypot payload
                 }),
             });
 
@@ -214,6 +216,20 @@ export default function RequestPage() {
                         placeholder="Email eller telefon, hvis du ønsker svar"
                         className="w-full px-4 py-2.5 bg-surface-card border border-border rounded-xl text-sm
               placeholder:text-text-muted focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/30 transition-all"
+                    />
+                </div>
+
+                {/* Honeypot field - visually hidden to catch bots that fill out all inputs */}
+                <div style={{ position: "absolute", left: "-9999px", top: "-9999px" }} aria-hidden="true">
+                    <label htmlFor="website_url">Website URL</label>
+                    <input
+                        type="text"
+                        id="website_url"
+                        name="website_url"
+                        value={websiteUrl}
+                        onChange={(e) => setWebsiteUrl(e.target.value)}
+                        tabIndex={-1}
+                        autoComplete="off"
                     />
                 </div>
 
