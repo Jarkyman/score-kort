@@ -1,15 +1,68 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 
 type RequestType = "correction" | "missing_club" | "other";
 
+interface ClubOption {
+    club_id: number;
+    club_name: string;
+}
+
+interface CourseOption {
+    course_id: number;
+    course_name: string;
+}
+
 export default function RequestPage() {
+    const [searchParams] = useSearchParams();
+    const initialClubId = searchParams.get("clubId") ? parseInt(searchParams.get("clubId")!) : null;
+    const initialCourseId = searchParams.get("courseId") ? parseInt(searchParams.get("courseId")!) : null;
+
     const [type, setType] = useState<RequestType>("correction");
+    const [selectedClubId, setSelectedClubId] = useState<number | null>(initialClubId);
+    const [selectedCourseId, setSelectedCourseId] = useState<number | null>(initialCourseId);
+    const [clubs, setClubs] = useState<ClubOption[]>([]);
+    const [courses, setCourses] = useState<CourseOption[]>([]);
+
     const [message, setMessage] = useState("");
     const [contact, setContact] = useState("");
     const [submitting, setSubmitting] = useState(false);
     const [submitted, setSubmitted] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    // Fetch all clubs on mount
+    useEffect(() => {
+        fetch("/api/clubs?limit=1000")
+            .then(res => res.json())
+            .then((data: any) => setClubs(data.clubs || []))
+            .catch(err => console.error("Failed to fetch clubs:", err));
+    }, []);
+
+    // Fetch courses when a club is selected
+    useEffect(() => {
+        if (!selectedClubId) {
+            setCourses([]);
+            if (selectedClubId !== initialClubId) { // Only reset if user manually changed club
+                 setSelectedCourseId(null);
+            }
+            return;
+        }
+
+        fetch(`/api/clubs/${selectedClubId}`)
+            .then(res => res.json())
+            .then((data: any) => {
+                setCourses(data.courses || []);
+                // If the selected course doesn't belong to the newly selected club, clear it (unless it's the initial load match)
+                if (selectedCourseId && data.courses && !data.courses.some((c: any) => c.course_id === selectedCourseId)) {
+                    if (selectedClubId === initialClubId) {
+                         setSelectedCourseId(initialCourseId);
+                    } else {
+                         setSelectedCourseId(null);
+                    }
+                }
+            })
+            .catch(err => console.error("Failed to fetch courses:", err));
+    }, [selectedClubId]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -24,6 +77,8 @@ export default function RequestPage() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     type,
+                    club_id: selectedClubId,
+                    course_id: selectedCourseId,
                     user_message: message.trim(),
                     user_contact: contact.trim() || undefined,
                 }),
@@ -90,6 +145,47 @@ export default function RequestPage() {
                         ))}
                     </div>
                 </div>
+
+                {/* Club & Course Selection */}
+                {type !== "other" && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium mb-2">
+                                Golfklub <span className="text-text-muted font-normal">(valgfri)</span>
+                            </label>
+                            <select
+                                value={selectedClubId || ""}
+                                onChange={(e) => {
+                                    setSelectedClubId(e.target.value ? parseInt(e.target.value) : null);
+                                    setSelectedCourseId(null);
+                                }}
+                                className="w-full px-4 py-2.5 bg-surface-card border border-border rounded-xl text-sm focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/30 transition-all"
+                            >
+                                <option value="">-- Vælg klub --</option>
+                                {clubs.map(c => (
+                                    <option key={c.club_id} value={c.club_id}>{c.club_name}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium mb-2">
+                                Bane <span className="text-text-muted font-normal">(valgfri)</span>
+                            </label>
+                            <select
+                                value={selectedCourseId || ""}
+                                onChange={(e) => setSelectedCourseId(e.target.value ? parseInt(e.target.value) : null)}
+                                disabled={!selectedClubId || courses.length === 0}
+                                className="w-full px-4 py-2.5 bg-surface-card border border-border rounded-xl text-sm disabled:opacity-50 disabled:bg-surface-2 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/30 transition-all"
+                            >
+                                <option value="">-- Vælg bane --</option>
+                                {courses.map(c => (
+                                    <option key={c.course_id} value={c.course_id}>{c.course_name}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+                )}
 
                 {/* Message */}
                 <div>

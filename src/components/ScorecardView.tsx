@@ -173,7 +173,7 @@ export default function ScorecardView({ courseId }: Props) {
                         Print Scorekort
                     </button>
                     <Link
-                        to="/indberetning"
+                        to={`/indberetning?clubId=${course.club_id}&courseId=${course.course_id}`}
                         className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium border border-border text-text-secondary hover:bg-surface-header"
                     >
                         Fejl i data?

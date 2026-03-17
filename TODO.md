@@ -1,14 +1,13 @@
 # TODO
 
 ## Next Steps
-- [ ] Add basic rate limiting
-- [ ] Add caching headers
-- [ ] Add SEO titles + sitemap
-- [ ] Add git init and commit 
-- [ ] Where do change request go? find a solution for now
+- [x] Add basic rate limiting
+- [x] Add caching headers
+- [x] Add SEO titles + sitemap
+- [x] Add git init and commit 
+- [x] Where do change request go? find a solution for now
 
 ## Future / Post-Launch
-- [ ] Add GPS available indicators
 - [ ] Implement Admin Interface (for reviewing change requests)
 - [ ] Add google ads (AdSense) (when site is live)
 - [ ] Add cookie compliance (when site is live)
