@@ -1,0 +1,32 @@
+{
+    "name": "score-kort",
+    "private": true,
+    "version": "1.0.0",
+    "type": "module",
+    "scripts": {
+        "dev": "vite & wrangler pages dev --proxy=5173",
+        "build": "vite build",
+        "preview": "wrangler pages dev ./dist",
+        "db:seed": "wrangler d1 execute score-kort-db --local --file=db/scorekort_schema.sql && wrangler d1 execute score-kort-db --local --file=db/scorekort_seed.sql",
+        "seed": "npm run db:seed",
+        "db:schema": "wrangler d1 execute score-kort-db --local --file=db/scorekort_schema.sql",
+        "db:reset": "npm run db:seed",
+        "check": "tsc --noEmit"
+    },
+    "dependencies": {
+        "react": "^19.0.0",
+        "react-dom": "^19.0.0",
+        "react-router-dom": "^7.1.0"
+    },
+    "devDependencies": {
+        "@cloudflare/workers-types": "^4.20250109.0",
+        "@tailwindcss/vite": "^4.0.0",
+        "@types/react": "^19.0.0",
+        "@types/react-dom": "^19.0.0",
+        "@vitejs/plugin-react": "^4.3.0",
+        "tailwindcss": "^4.0.0",
+        "typescript": "^5.7.0",
+        "vite": "^6.1.0",
+        "wrangler": "^4.67.0"
+    }
+}
