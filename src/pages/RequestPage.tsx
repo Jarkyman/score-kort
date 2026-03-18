@@ -109,8 +109,8 @@ export default function RequestPage() {
                 </div>
                 <h2 className="text-xl font-bold mb-2">Tak for din indberetning!</h2>
                 <p className="text-text-secondary mb-6">Vi kigger på det hurtigst muligt.</p>
-                <Link to="/" className="inline-block px-5 py-2.5 bg-brand-600 hover:bg-brand-500 rounded-xl text-sm font-semibold transition-all">
-                    ← Tilbage til forsiden
+                <Link to={selectedClubId ? `/klub/${selectedClubId}` : "/"} className="inline-block px-5 py-2.5 bg-brand-600 hover:bg-brand-500 rounded-xl text-sm font-semibold transition-all">
+                    ← {selectedClubId ? "Tilbage til klubben" : "Tilbage til forsiden"}
                 </Link>
             </div>
         );
