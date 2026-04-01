@@ -5,4 +5,4 @@ pages_build_output_dir = "./dist"
 [[d1_databases]]
 binding = "DB"
 database_name = "score-kort-db"
-database_id = "placeholder-replace-after-cf-create"
+database_id = "b0c6900f-7a9c-4845-a927-1547afb64695"
