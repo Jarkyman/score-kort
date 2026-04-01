@@ -39,12 +39,6 @@ Projektet er drevet af lynhurtig og moderne teknologi:
 - **Backend & Hosting:** [Cloudflare Pages](https://pages.cloudflare.com/) og indbyggede Cloudflare Functions.
 - **Database:** Serverless SQL Database via [Cloudflare D1](https://developers.cloudflare.com/d1/).
 
-## 📖 Er du Udvikler? (Dokumentation)
-
-Alt udvikler-relateret indhold (lokal opsætning, deployment rutiner, seedning af lokal test-database mm.) er flyttet til sin egen guide.
-
-➡️  [Læs vores **Udviklingsguide (docs/DEVELOPMENT.md)** her](docs/DEVELOPMENT.md)
-
 ## 🔗 Relevante Links
 
 - **Live Site:** [https://score-kort.dk](https://score-kort.dk)
@@ -52,5 +46,5 @@ Alt udvikler-relateret indhold (lokal opsætning, deployment rutiner, seedning a
 
 ---
 <div align="center">
-  <sub>Bygget med ❤️ for golf og god kode.</sub>
+  <sub>Bygget med ❤️ for golf, app kommer snart.</sub>
 </div>
