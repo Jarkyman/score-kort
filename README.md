@@ -1,92 +1,56 @@
-# Score-Kort.dk
+<div align="center">
+  <h1>⛳ Score-Kort.dk</h1>
 
-A lightweight public site that shows up-to-date scorecard data for Danish golf clubs. Built with React, Cloudflare Pages, and D1.
+  <p>
+    <strong>Din digitale platform for danske golf scorekort.</strong>
+  </p>
+  
+  <p>
+    <a href="https://score-kort.dk">🌍 Besøg Score-Kort.dk</a>
+  </p>
+  
+  <!-- Shields -->
+  <p>
+    <img alt="React" src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" />
+    <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white" />
+    <img alt="Cloudflare Pages" src="https://img.shields.io/badge/Cloudflare_Pages-F38020?style=for-the-badge&logo=cloudflare&logoColor=white" />
+    <img alt="Cloudflare D1" src="https://img.shields.io/badge/Cloudflare_D1-FA8072?style=for-the-badge&logo=cloudflare&logoColor=white" />
+    <img alt="Vite" src="https://img.shields.io/badge/Vite-B73BFE?style=for-the-badge&logo=vite&logoColor=FFD62E" />
+  </p>
+</div>
 
-## Prerequisites
+## 🏌️ Om Projektet
 
-- Node.js (v18+)
-- npm
+Score-Kort.dk er en letvægts, offentlig web-applikation, der giver dig lynhurtig adgang til opdateret scorekort-data for danske golfklubber. Det er nemt, enkelt og tilgængeligt at finde tee-steder, distancer og hul-informationer for rigtig mange golfbaner i Danmark, perfekt til at tage med på banen.
 
-## Getting Started
+### ✨ Nøglefunktioner
 
-1.  **Install dependencies:**
+- 📍 **Danske Golfbaner:** Omfattende database over danske klubber og baner.
+- 📱 **Mobilvenligt:** Responsivt design der fungerer perfekt på telefonen ude på runden.
+- ⚡ **Lynhurtigt (Edge-hosted):** Vi gør brug af moderne "Edge" teknologi for at levere data lynhurtigt uanset hvornår du har brug for det.
+- 📊 **Detaljeret Opslag:** Præcise længder, pars og indexes (hcp) for samtlige huller per tee.
 
-    ```bash
-    npm install
-    ```
+## 🛠️ Teknologi-stack
 
-2.  **Setup Local Database (D1):**
+Projektet er drevet af lynhurtig og moderne teknologi:
 
-    Initialize the local D1 database schema and seed it with data.
+- **Frontend:** [React](https://reactjs.org/) og [Vite](https://vitejs.dev/) for et ekstremt hurtigt og interaktivt UI.
+- **Sprog:** [TypeScript](https://www.typescriptlang.org/) for typesikkerhed overalt.
+- **Backend & Hosting:** [Cloudflare Pages](https://pages.cloudflare.com/) og indbyggede Cloudflare Functions.
+- **Database:** Serverless SQL Database via [Cloudflare D1](https://developers.cloudflare.com/d1/).
 
-    ```bash
-    # Apply schema
-    npx wrangler d1 execute score-kort-db --local --file=db/scorekort_schema.sql
+## 📖 Er du Udvikler? (Dokumentation)
 
-    # Seed data
-    npx wrangler d1 execute score-kort-db --local --file=db/scorekort_seed.sql
-    ```
+Alt udvikler-relateret indhold (lokal opsætning, deployment rutiner, seedning af lokal test-database mm.) er flyttet til sin egen guide.
 
-3.  **Run Development Server:**
+➡️  [Læs vores **Udviklingsguide (docs/DEVELOPMENT.md)** her](docs/DEVELOPMENT.md)
 
-    Start the Vite development server with Cloudflare Pages/D1 binding support.
+## 🔗 Relevante Links
 
-    ```bash
-    npm run dev
-    ```
+- **Live Site:** [https://score-kort.dk](https://score-kort.dk)
+- **Rapporter en fejl:** Brug *Issues* fanebladet i Github for at rapportere fejl i data eller appen.
 
-    The app will be available at `http://localhost:8788` (Wrangler proxy with D1 bindings).
-    Vite HMR runs on `http://localhost:5173`.
-
-## Project Structure
-
--   `src/`: React frontend code.
--   `functions/`: Cloudflare Pages Functions (API).
--   `db/`: Database schema and seed files.
--   `public/`: Static assets.
-
-## Deployment
-
-This project is designed to be deployed to Cloudflare Pages.
-
-1.  Create a Cloudflare Pages project.
-2.  Create a D1 database in the Cloudflare dashboard.
-3.  Update `wrangler.toml` with the correct `database_id`.
-4.  Deploy using Wrangler or connect your Git repository to Cloudflare Pages.
-
-## Database Management
-
-There is no public API for modifying data. All changes are made directly via Wrangler CLI or the Cloudflare Dashboard.
-
-### Quick Fix (single record)
-
-Run SQL directly against the remote database:
-
-```bash
-npx wrangler d1 execute score-kort-db --remote --command "UPDATE tees SET tee_name = 'Gul' WHERE tee_id = 123"
-```
-
-### Run a SQL file
-
-```bash
-npx wrangler d1 execute score-kort-db --remote --file=db/my_fix.sql
-```
-
-### Full Re-seed
-
-If you make larger changes to the CSV source files:
-
-1.  Update files in `csv-files/`.
-2.  Regenerate `db/scorekort_seed.sql`.
-3.  Apply to remote:
-
-    ```bash
-    npx wrangler d1 execute score-kort-db --remote --file=db/scorekort_schema.sql
-    npx wrangler d1 execute score-kort-db --remote --file=db/scorekort_seed.sql
-    ```
-
-### Cloudflare Dashboard
-
-You can also run queries directly at [dash.cloudflare.com](https://dash.cloudflare.com) → **Workers & Pages → D1** → select your database.
-
-> **Tip:** Use `--local` instead of `--remote` to test changes on your local database first.
+---
+<div align="center">
+  <sub>Bygget med ❤️ for golf og god kode.</sub>
+</div>
