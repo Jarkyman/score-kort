@@ -25,3 +25,7 @@ Thumbs.db
 # Logs
 *.log
 wrangler-*.log
+
+# Golf data
+csv-files/
+db/scorekort_seed.sql
