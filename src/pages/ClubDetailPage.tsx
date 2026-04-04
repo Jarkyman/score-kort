@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import ScorecardView from "../components/ScorecardView";
+import SEO from "../components/SEO";
 
 interface ClubDetail {
     club_id: number;
@@ -55,17 +56,10 @@ export default function ClubDetailPage() {
         }
     }, [club, selectedCourseId]);
 
-    useEffect(() => {
-        if (club) {
-            document.title = `${club.club_name} - Scorekort | Score-kort.dk`;
-        } else {
-            document.title = "Golfklub | Score-kort.dk";
-        }
-    }, [club]);
-
     if (loading) {
         return (
             <div className="animate-in space-y-4">
+                <SEO title="Indlæser... | Score-kort.dk" description="Henter golfklub data..." />
                 <div className="skeleton h-8 w-64 rounded-lg" />
                 <div className="skeleton h-4 w-48 rounded" />
                 <div className="skeleton h-40 rounded-xl mt-6" />
@@ -76,14 +70,41 @@ export default function ClubDetailPage() {
     if (!club) {
         return (
             <div className="text-center py-20 text-text-muted animate-in">
+                <SEO title="Ikke fundet | Score-kort.dk" description="Klubben blev ikke fundet." />
                 <p className="text-xl mb-2">Klubben blev ikke fundet</p>
                 <Link to="/" className="text-brand-400 hover:underline text-sm">← Tilbage til oversigten</Link>
             </div>
         );
     }
 
+    const schemaMarkup = club ? {
+        "@context": "https://schema.org",
+        "@type": "SportsActivityLocation",
+        "name": club.club_name,
+        "address": {
+            "@type": "PostalAddress",
+            "streetAddress": club.address || undefined,
+            "addressLocality": club.city || undefined,
+            "postalCode": club.postal_code || undefined,
+            "addressCountry": "DK"
+        },
+        "url": club.website || `https://score-kort.dk/klub/${club.club_id}`,
+        "telephone": club.telephone || undefined,
+        "geo": (club.latitude && club.longitude) ? {
+            "@type": "GeoCoordinates",
+            "latitude": club.latitude,
+            "longitude": club.longitude
+        } : undefined
+    } : null;
+
     return (
         <div className="animate-in">
+            <SEO 
+                title={`${club.club_name} - Scorekort | Score-kort.dk`} 
+                description={`Se scorekort, par, slope, og CR for ${club.club_name}${club.city ? ` i ${club.city}` : ''}.`} 
+                url={`/klub/${club.club_id}`}
+                schemaMarkup={schemaMarkup ?? undefined}
+            />
             {/* Breadcrumb */}
             <div className="flex items-center gap-2 text-sm text-text-muted mb-6 print:hidden">
                 <Link to="/" className="hover:text-brand-400 transition-colors">Klubber</Link>

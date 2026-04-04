@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
+import SEO from "../components/SEO";
 
 interface Club {
     club_id: number;
@@ -12,10 +13,6 @@ export default function ClubListPage() {
     const [allClubs, setAllClubs] = useState<Club[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchInput, setSearchInput] = useState("");
-
-    useEffect(() => {
-        document.title = "Find Golfklub | Score-kort.dk";
-    }, []);
 
     useEffect(() => {
         const fetchClubs = async () => {
@@ -45,6 +42,11 @@ export default function ClubListPage() {
 
     return (
         <div className="animate-in">
+            <SEO 
+                title="Find Golfklub | Score-kort.dk" 
+                description="Find scorekort, banedata og tee-oplysninger for alle golfklubber i Danmark" 
+                url="/klubber" 
+            />
             {/* Hero */}
             <div className="text-center mb-8">
                 <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight mb-2">
