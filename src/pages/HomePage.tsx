@@ -60,7 +60,7 @@ export default function HomePage() {
                         <span className="hero-title-accent">scorekort</span>
                     </h1>
                     <p className="hero-subtitle">
-                        Find scorekort, banedata, tee-oplysninger og meget mere for alle golfklubber i Danmark — helt gratis.
+                        Find scorekort, banedata, tee-oplysninger og meget mere for alle golfklubber i Danmark.
                     </p>
 
                     <div className="hero-actions">
