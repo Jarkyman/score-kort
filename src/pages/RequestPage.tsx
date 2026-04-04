@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import SEO from "../components/SEO";
 
 type RequestType = "correction" | "missing_club" | "other";
 
@@ -102,6 +103,7 @@ export default function RequestPage() {
     if (submitted) {
         return (
             <div className="animate-in text-center py-20">
+                <SEO title="Tak for din indberetning | Score-kort.dk" description="Tak for at hjælpe med at forbedre siden." />
                 <div className="w-16 h-16 rounded-full bg-brand-600/15 flex items-center justify-center mx-auto mb-4">
                     <svg className="w-8 h-8 text-brand-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -118,6 +120,7 @@ export default function RequestPage() {
 
     return (
         <div className="animate-in max-w-lg mx-auto">
+            <SEO title="Indberet fejl eller tilføj klub | Score-kort.dk" description="Har du fundet en fejl? Mangler der et scorekort? Indberet det her." url="/indberetning" />
             <h1 className="text-2xl font-bold mb-2">Indberet en rettelse</h1>
             <p className="text-text-secondary text-sm mb-6">
                 Har du fundet fejl i banedata, mangler der en klub, eller har du anden feedback?

@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { useEffect } from "react";
+import SEO from "../components/SEO";
 
 const FEATURES = [
     {
@@ -40,12 +40,13 @@ const STATS = [
 ];
 
 export default function HomePage() {
-    useEffect(() => {
-        document.title = "Score-kort.dk — Danske Golf Scorekort";
-    }, []);
-
     return (
         <div className="home-page">
+            <SEO 
+                title="Score-kort.dk — Danske Golf Scorekort" 
+                description="Find scorekort, banedata, tee-oplysninger og meget mere for alle golfklubber i Danmark." 
+                url="/" 
+            />
             {/* Hero Section */}
             <section className="hero-section">
                 <div className="hero-bg" />
