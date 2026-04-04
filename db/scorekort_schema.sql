@@ -1,7 +1,6 @@
 -- score-kort.dk — Database Schema
 -- Target: Cloudflare D1 (SQLite)
 
-DROP TABLE IF EXISTS change_requests;
 DROP TABLE IF EXISTS pois;
 DROP TABLE IF EXISTS tee_lengths;
 DROP TABLE IF EXISTS tees;
@@ -116,7 +115,7 @@ CREATE INDEX idx_pois_course_hole ON pois(course_id, hole_no);
 -- ============================================================
 -- Change Requests (user-submitted corrections)
 -- ============================================================
-CREATE TABLE change_requests (
+CREATE TABLE IF NOT EXISTS change_requests (
   id            INTEGER PRIMARY KEY AUTOINCREMENT,
   created_at    TEXT    NOT NULL DEFAULT (datetime('now')),
   type          TEXT    NOT NULL,
@@ -129,4 +128,4 @@ CREATE TABLE change_requests (
   admin_notes   TEXT
 );
 
-CREATE INDEX idx_change_requests_status ON change_requests(status);
+CREATE INDEX IF NOT EXISTS idx_change_requests_status ON change_requests(status);
