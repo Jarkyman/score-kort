@@ -98,7 +98,7 @@ export default function ScorecardView({ courseId }: Props) {
                 <col key={t.tee_key} className="w-10" />
             ))}
             <col className="w-10" /> {/* Par */}
-            <col className="w-10" /> {/* Index */}
+            <col className="w-10" /> {/* HCP */}
             {[...Array(12)].map((_, i) => (
                 <col key={i} className="w-10" />
             ))}
@@ -229,7 +229,7 @@ export default function ScorecardView({ courseId }: Props) {
                                     </th>
                                 ))}
                                 <th>Par</th>
-                                <th>Index</th>
+                                <th>HCP</th>
                                 {[1, 2, 3, 4].map(p => (
                                     <React.Fragment key={p}>
                                         <th className={`${p > 1 ? 'border-l-2 border-black' : ''}`}>SPH</th>
@@ -280,8 +280,8 @@ export default function ScorecardView({ courseId }: Props) {
                                             )}
                                         </th>
                                     ))}
-                                    <th>Par</th>
-                                    <th>Index</th>
+                                     <th>Par</th>
+                                     <th>HCP</th>
                                     {[1, 2, 3, 4].map(p => (
                                         <React.Fragment key={p}>
                                             <th className={`${p > 1 ? 'border-l-2 border-black' : ''}`}>SPH</th>

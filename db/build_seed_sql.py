@@ -68,9 +68,18 @@ def build_clubs(out, rows):
 
 def build_courses_and_holes(out, rows):
     out.write("-- Courses and Holes\n")
+    seen_course_ids = set()
     for r in rows:
+        course_id_raw = r["CourseID"].strip().rstrip(",")
+        if not course_id_raw:
+            continue
+        course_id = num(course_id_raw)
+        
+        if course_id in seen_course_ids:
+            continue
+        seen_course_ids.add(course_id)
+
         club_id = num(r["ClubID"])
-        course_id = num(r["CourseID"])
         course_name = esc(r["CourseName"])
         num_holes_val = num(r["NumHoles"])
         measure = num(r["MeasureMeters"])
@@ -180,8 +189,31 @@ def main():
     print(f"  tees: {len(tees)} rows")
     print(f"  coordinates: {len(coordinates)} rows")
 
-    # Build set of valid course IDs for POI filtering
-    valid_course_ids = {r["CourseID"].strip() for r in courses}
+    # 1. Valid club IDs
+    valid_club_ids = {num(r["ClubID"]) for r in clubs}
+
+    # 2. Filter courses to only those belonging to valid clubs
+    valid_courses = []
+    for c in courses:
+        if num(c["ClubID"]) in valid_club_ids:
+            valid_courses.append(c)
+
+    print(f"  Ignored {len(courses) - len(valid_courses)} courses due to missing ClubID")
+
+    # 3. Filter tees to only those belonging to valid courses
+    seen_valid_courses = set()
+    for r in valid_courses:
+        course_id_raw = r["CourseID"].strip().rstrip(",")
+        if course_id_raw:
+             seen_valid_courses.add(num(course_id_raw))
+
+    valid_tees = []
+    for t in tees:
+        course_id = num(t["CourseID"].strip().rstrip(","))
+        if course_id in seen_valid_courses:
+            valid_tees.append(t)
+            
+    print(f"  Ignored {len(tees) - len(valid_tees)} tees due to missing CourseID")
 
     with open(OUTPUT, "w", encoding="utf-8") as out:
         out.write("-- score-kort.dk — Seed Data\n")
@@ -190,11 +222,11 @@ def main():
         out.write("PRAGMA foreign_keys = OFF;\n\n")
 
         build_clubs(out, clubs)
-        build_courses_and_holes(out, courses)
-        build_tees_and_lengths(out, tees)
+        build_courses_and_holes(out, valid_courses)
+        build_tees_and_lengths(out, valid_tees)
 
         # Filter POIs to only include courses that exist
-        valid_coords = [r for r in coordinates if r["CourseID"].strip() in valid_course_ids]
+        valid_coords = [r for r in coordinates if r["CourseID"].strip() in {c["CourseID"].strip() for c in valid_courses}]
         skipped = len(coordinates) - len(valid_coords)
         if skipped:
             print(f"  Skipped {skipped} POIs referencing non-existent courses")
