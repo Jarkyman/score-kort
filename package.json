@@ -8,6 +8,7 @@
         "build": "vite build",
         "preview": "wrangler pages dev ./dist",
         "db:seed": "wrangler d1 execute score-kort-db --local --file=db/scorekort_schema.sql && wrangler d1 execute score-kort-db --local --file=db/scorekort_seed.sql",
+        "db:deploy": "wrangler d1 execute score-kort-db --remote --file=db/scorekort_schema.sql --yes && wrangler d1 execute score-kort-db --remote --file=db/scorekort_seed.sql --yes",
         "seed": "npm run db:seed",
         "db:schema": "wrangler d1 execute score-kort-db --local --file=db/scorekort_schema.sql",
         "db:reset": "npm run db:seed",
