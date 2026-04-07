@@ -23,7 +23,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     const origin = request.headers.get("origin");
     const isSameOrigin = secFetchSite === "same-origin" || 
                          secFetchSite === "same-site" ||
-                         (origin && (origin.includes("score-kort.dk") || origin.includes("localhost")));
+                         (origin && (origin === "https://score-kort.dk" || origin.endsWith(".score-kort.dk") || origin.includes("localhost")));
 
     if (!isSameOrigin) {
         // 2. Token Validation: Require a valid token for external API calls
