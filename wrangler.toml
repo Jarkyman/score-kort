@@ -6,3 +6,7 @@ pages_build_output_dir = "./dist"
 binding = "DB"
 database_name = "score-kort-db"
 database_id = "32df5e07-9ddb-4358-bbb9-fe7a9396c3d8"
+
+[[kv_namespaces]]
+binding = "API_KEYS"
+id = "04d4e9d4e7ae46fa8d805f482d501f72"

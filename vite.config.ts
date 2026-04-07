@@ -9,7 +9,7 @@ export default defineConfig({
             ignored: ["**/.wrangler/**"],
         },
         proxy: {
-            "/api": {
+            "/api/": {
                 target: "http://localhost:8788",
                 changeOrigin: true,
             },
