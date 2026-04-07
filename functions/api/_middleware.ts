@@ -21,9 +21,12 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     // This ensures the current website doesn't break.
     const secFetchSite = request.headers.get("sec-fetch-site");
     const origin = request.headers.get("origin");
-    const isSameOrigin = secFetchSite === "same-origin" || 
-                         secFetchSite === "same-site" ||
-                         (origin && (origin === "https://score-kort.dk" || origin.endsWith(".score-kort.dk") || origin.includes("localhost")));
+    const isDocsRequest = request.headers.get("X-Docs-Request") === "true";
+    const isSameOrigin = !isDocsRequest && (
+        secFetchSite === "same-origin" ||
+        secFetchSite === "same-site" ||
+        (origin && (origin === "https://score-kort.dk" || origin.endsWith(".score-kort.dk") || origin.includes("localhost")))
+    );
 
     if (!isSameOrigin) {
         // 2. Token Validation: Require a valid token for external API calls

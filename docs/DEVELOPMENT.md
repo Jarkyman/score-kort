@@ -9,6 +9,8 @@ A lightweight public site that shows up-to-date scorecard data for Danish golf c
 
 ## Getting Started
 
+lsof -ti:5173 | xargs kill -9
+
 1.  **Install dependencies:**
 
     ```bash

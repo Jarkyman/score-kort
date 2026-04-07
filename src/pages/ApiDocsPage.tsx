@@ -1,4 +1,7 @@
+import { useState } from "react";
 import SEO from "../components/SEO";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface Param {
     type: "path" | "query" | "body";
@@ -7,12 +10,53 @@ interface Param {
     description: string;
 }
 
+interface LiveResponse {
+    status: number;
+    statusText: string;
+    data: unknown;
+    timeMs: number;
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function getType(value: unknown): string {
+    if (value === null) return "null";
+    if (Array.isArray(value)) {
+        if (value.length === 0) return "array";
+        const first = value[0];
+        if (typeof first === "object" && first !== null && !Array.isArray(first)) return "array[object]";
+        return `array[${getType(first)}]`;
+    }
+    if (typeof value === "number") return Number.isInteger(value) ? "integer" : "number";
+    if (typeof value === "boolean") return "boolean";
+    if (typeof value === "string") return "string";
+    if (typeof value === "object") return "object";
+    return typeof value;
+}
+
+function buildUrl(template: string, params: Param[], values: Record<string, string>): string {
+    let url = template;
+    const queryParts: string[] = [];
+    for (const param of params) {
+        if (param.type === "body") continue;
+        const val = values[param.name];
+        if (!val) continue;
+        if (param.type === "path") {
+            url = url.replace(`:${param.name}`, encodeURIComponent(val));
+        } else {
+            queryParts.push(`${encodeURIComponent(param.name)}=${encodeURIComponent(val)}`);
+        }
+    }
+    if (queryParts.length > 0) url += "?" + queryParts.join("&");
+    return url;
+}
+
+// ─── Primitive components ─────────────────────────────────────────────────────
+
 function MethodBadge({ method }: { method: "GET" | "POST" }) {
-    const color = method === "GET"
-        ? "bg-green-700 text-white"
-        : "bg-blue-700 text-white";
+    const color = method === "GET" ? "bg-green-700 text-white" : "bg-blue-700 text-white";
     return (
-        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide ${color}`}>
+        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide shrink-0 ${color}`}>
             {method}
         </span>
     );
@@ -46,9 +90,7 @@ function ParamsTable({ params }: { params: Param[] }) {
                             </td>
                             <td className="p-2 font-mono text-brand-600">{p.name}</td>
                             <td className="p-2">
-                                {p.required
-                                    ? <span className="text-red-400 font-semibold">ja</span>
-                                    : <span className="text-text-muted">nej</span>}
+                                {p.required ? <span className="text-red-400 font-semibold">ja</span> : <span className="text-text-muted">nej</span>}
                             </td>
                             <td className="p-2 text-text-secondary">{p.description}</td>
                         </tr>
@@ -59,6 +101,116 @@ function ParamsTable({ params }: { params: Param[] }) {
     );
 }
 
+// ─── Schema view ──────────────────────────────────────────────────────────────
+
+const typeColors: Record<string, string> = {
+    string: "text-green-700",
+    integer: "text-blue-700",
+    number: "text-blue-700",
+    boolean: "text-purple-700",
+    null: "text-slate-500",
+    object: "text-orange-700",
+};
+
+function typeColor(t: string): string {
+    if (t.startsWith("array")) return "text-orange-700";
+    return typeColors[t] ?? "text-text-secondary";
+}
+
+function SchemaRow({ name, value, indent = 0 }: { name: string; value: unknown; indent?: number }) {
+    const type = getType(value);
+    const isNestedObject = typeof value === "object" && value !== null && !Array.isArray(value);
+    const isArrayOfObjects =
+        Array.isArray(value) && value.length > 0 &&
+        typeof value[0] === "object" && value[0] !== null && !Array.isArray(value[0]);
+
+    return (
+        <>
+            <tr className="border-b border-border last:border-b-0">
+                <td className="p-2 font-mono text-xs" style={{ paddingLeft: `${8 + indent * 16}px` }}>
+                    {indent > 0 && <span className="text-text-muted mr-1">└</span>}
+                    <span className="text-brand-600">{name}</span>
+                </td>
+                <td className="p-2">
+                    <span className={`text-xs font-mono px-1.5 py-0.5 rounded bg-surface-2 ${typeColor(type)}`}>
+                        {type}
+                    </span>
+                </td>
+                <td className="p-2 text-xs text-text-muted italic">
+                    {value === null ? "kan være null" : ""}
+                </td>
+            </tr>
+            {isNestedObject &&
+                Object.entries(value as Record<string, unknown>).map(([k, v]) => (
+                    <SchemaRow key={`${name}.${k}`} name={k} value={v} indent={indent + 1} />
+                ))}
+            {isArrayOfObjects &&
+                Object.entries((value as unknown[])[0] as Record<string, unknown>).map(([k, v]) => (
+                    <SchemaRow key={`${name}[].${k}`} name={k} value={v} indent={indent + 1} />
+                ))}
+        </>
+    );
+}
+
+function SchemaView({ json }: { json: string }) {
+    let parsed: unknown;
+    try {
+        parsed = JSON.parse(json);
+    } catch {
+        return <p className="text-xs text-text-muted p-3">Kunne ikke parse schema.</p>;
+    }
+    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+        return <p className="text-xs text-text-muted p-3">Schema ikke tilgængeligt.</p>;
+    }
+    return (
+        <div className="overflow-x-auto rounded-lg border border-border">
+            <table className="w-full text-xs border-collapse">
+                <thead>
+                    <tr className="bg-surface-3 text-text-muted text-left">
+                        <th className="p-2 border-b border-border font-semibold">Felt</th>
+                        <th className="p-2 border-b border-border font-semibold">Type</th>
+                        <th className="p-2 border-b border-border font-semibold">Note</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {Object.entries(parsed as Record<string, unknown>).map(([key, value]) => (
+                        <SchemaRow key={key} name={key} value={value} />
+                    ))}
+                </tbody>
+            </table>
+        </div>
+    );
+}
+
+// ─── JSON viewer (syntax highlighted) ────────────────────────────────────────
+
+function JsonViewer({ data }: { data: unknown }) {
+    const json = JSON.stringify(data, null, 2)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(
+            /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g,
+            (match) => {
+                if (/^"/.test(match)) {
+                    if (/:$/.test(match)) return `<span style="color:#b392f0">${match}</span>`;
+                    return `<span style="color:#9ecbff">${match}</span>`;
+                }
+                if (/true|false/.test(match)) return `<span style="color:#79b8ff">${match}</span>`;
+                if (/null/.test(match)) return `<span style="color:#6a737d">${match}</span>`;
+                return `<span style="color:#f8c555">${match}</span>`;
+            }
+        );
+    return (
+        <pre
+            className="bg-slate-900 text-slate-100 p-4 text-xs overflow-x-auto max-h-80 overflow-y-auto font-mono leading-relaxed"
+            dangerouslySetInnerHTML={{ __html: json }}
+        />
+    );
+}
+
+// ─── Endpoint card ────────────────────────────────────────────────────────────
+
 interface EndpointCardProps {
     method: "GET" | "POST";
     path: string;
@@ -66,33 +218,229 @@ interface EndpointCardProps {
     params?: Param[];
     curlExample: string;
     responseExample: string;
+    defaultBody?: string;
+    token: string;
 }
 
-function EndpointCard({ method, path, description, params, curlExample, responseExample }: EndpointCardProps) {
+function EndpointCard({
+    method, path, description, params = [], curlExample, responseExample, defaultBody = "", token,
+}: EndpointCardProps) {
+    const [isOpen, setIsOpen] = useState(false);
+    const [activeTab, setActiveTab] = useState<"schema" | "example" | "curl">("schema");
+    const [paramValues, setParamValues] = useState<Record<string, string>>({});
+    const [bodyValue, setBodyValue] = useState(defaultBody);
+    const [isLoading, setIsLoading] = useState(false);
+    const [liveResponse, setLiveResponse] = useState<LiveResponse | null>(null);
+    const [fetchError, setFetchError] = useState<string | null>(null);
+    const [showToken, setShowToken] = useState(false);
+
+    const previewUrl = buildUrl(path, params, paramValues);
+
+    const handleSend = async () => {
+        setIsLoading(true);
+        setFetchError(null);
+        setLiveResponse(null);
+        try {
+            const t0 = Date.now();
+            const headers: Record<string, string> = { "X-Docs-Request": "true" };
+            if (token) headers["Authorization"] = `Bearer ${token}`;
+            if (method === "POST") headers["Content-Type"] = "application/json";
+
+            const res = await fetch(previewUrl, {
+                method,
+                headers,
+                ...(method === "POST" && bodyValue ? { body: bodyValue } : {}),
+            });
+
+            let data: unknown;
+            try { data = await res.json(); } catch { data = await res.text(); }
+
+            setLiveResponse({ status: res.status, statusText: res.statusText, data, timeMs: Date.now() - t0 });
+        } catch (e) {
+            setFetchError(e instanceof Error ? e.message : "Netværksfejl");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const statusBadgeClass = (status: number) => {
+        if (status >= 200 && status < 300) return "bg-green-500/10 text-green-400 border border-green-500/20";
+        if (status >= 400) return "bg-red-500/10 text-red-400 border border-red-500/20";
+        return "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20";
+    };
+
+    const nonBodyParams = params.filter((p) => p.type !== "body");
+
     return (
-        <div className="bg-surface-card border border-border rounded-2xl p-6 space-y-5">
-            <div className="flex items-center gap-3 flex-wrap">
+        <div className="border border-border rounded-2xl overflow-hidden bg-surface-card">
+            {/* Header */}
+            <button
+                onClick={() => setIsOpen((o) => !o)}
+                className="w-full flex items-center gap-3 p-4 hover:bg-surface-2 transition-colors text-left"
+            >
                 <MethodBadge method={method} />
-                <code className="font-mono text-base text-text-primary">{path}</code>
-            </div>
-            <p className="text-sm text-text-secondary">{description}</p>
-            {params && params.length > 0 && (
-                <div>
-                    <h4 className="text-xs font-bold uppercase text-text-muted mb-2 tracking-wider">Parametre</h4>
-                    <ParamsTable params={params} />
+                <code className="font-mono text-sm text-text-primary flex-1 min-w-0 truncate">{path}</code>
+                <span className="text-text-secondary text-xs hidden sm:block truncate max-w-[240px]">{description}</span>
+                <svg
+                    className={`w-4 h-4 text-text-muted shrink-0 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+                    fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+                >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+            </button>
+
+            {/* Collapsible body via CSS grid trick */}
+            <div
+                className="grid transition-all duration-300 ease-in-out"
+                style={{ gridTemplateRows: isOpen ? "1fr" : "0fr" }}
+            >
+                <div className="overflow-hidden">
+                    <div className="p-6 border-t border-border space-y-6">
+                        {/* Description */}
+                        <p className="text-sm text-text-secondary">{description}</p>
+
+                        {/* Params table */}
+                        {params.length > 0 && (
+                            <div>
+                                <h4 className="text-xs font-bold uppercase text-text-muted mb-2 tracking-wider">Parametre</h4>
+                                <ParamsTable params={params} />
+                            </div>
+                        )}
+
+                        {/* Schema / Eksempel / Curl tabs */}
+                        <div>
+                            <div className="flex gap-1 mb-3 bg-surface-2 rounded-lg p-1 w-fit">
+                                {(["schema", "example", "curl"] as const).map((tab) => (
+                                    <button
+                                        key={tab}
+                                        onClick={() => setActiveTab(tab)}
+                                        className={`px-3 py-1 rounded-md text-xs font-semibold transition-colors ${
+                                            activeTab === tab
+                                                ? "bg-surface-card text-text-primary shadow-sm"
+                                                : "text-text-muted hover:text-text-secondary"
+                                        }`}
+                                    >
+                                        {tab === "schema" ? "Schema" : tab === "example" ? "Eksempel" : "Curl"}
+                                    </button>
+                                ))}
+                            </div>
+                            {activeTab === "schema" && <SchemaView json={responseExample} />}
+                            {activeTab === "example" && <CodeBlock>{responseExample}</CodeBlock>}
+                            {activeTab === "curl" && <CodeBlock>{curlExample}</CodeBlock>}
+                        </div>
+
+                        {/* Try it out */}
+                        <div className="border border-border rounded-xl overflow-hidden">
+                            <div className="bg-surface-3 px-4 py-2 border-b border-border flex items-center justify-between">
+                                <span className="text-xs font-bold uppercase tracking-wider text-text-muted">Prøv det selv</span>
+                                {!token && (
+                                    <span className="text-xs text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+                                        Indsæt token øverst for at teste udefra
+                                    </span>
+                                )}
+                            </div>
+                            <div className="p-4 space-y-4">
+                                {/* Path & query param inputs */}
+                                {nonBodyParams.length > 0 && (
+                                    <div className="space-y-2">
+                                        {nonBodyParams.map((p) => (
+                                            <div key={p.name} className="flex items-center gap-3">
+                                                <label className="text-xs font-mono text-brand-600 w-28 shrink-0">
+                                                    {p.name}
+                                                    {p.required && <span className="text-red-400 ml-0.5">*</span>}
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={paramValues[p.name] ?? ""}
+                                                    onChange={(e) =>
+                                                        setParamValues((v) => ({ ...v, [p.name]: e.target.value }))
+                                                    }
+                                                    placeholder={p.description}
+                                                    className="flex-1 bg-surface-card border border-border rounded-lg px-3 py-1.5 text-xs font-mono text-text-primary placeholder:text-text-muted focus:outline-none focus:border-brand-500 transition-colors"
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {/* Body textarea for POST */}
+                                {method === "POST" && (
+                                    <div>
+                                        <label className="text-xs font-bold uppercase text-text-muted tracking-wider mb-2 block">
+                                            Request body (JSON)
+                                        </label>
+                                        <textarea
+                                            value={bodyValue}
+                                            onChange={(e) => setBodyValue(e.target.value)}
+                                            rows={6}
+                                            spellCheck={false}
+                                            className="w-full bg-slate-900 text-slate-100 border border-slate-800 rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:border-brand-500 transition-colors"
+                                        />
+                                    </div>
+                                )}
+
+                                {/* Token display (if set) */}
+                                {token && (
+                                    <div className="flex items-center gap-2 text-xs text-text-muted">
+                                        <span>Token:</span>
+                                        <span className="font-mono">
+                                            {showToken ? token : "•".repeat(Math.min(token.length, 24))}
+                                        </span>
+                                        <button
+                                            onClick={() => setShowToken((s) => !s)}
+                                            className="text-brand-600 hover:underline"
+                                        >
+                                            {showToken ? "skjul" : "vis"}
+                                        </button>
+                                    </div>
+                                )}
+
+                                {/* URL preview + send */}
+                                <div className="flex items-center gap-3 flex-wrap">
+                                    <div className="flex-1 min-w-0 flex items-center gap-2 bg-surface-2 border border-border rounded-lg px-3 py-1.5">
+                                        <span className="text-xs text-text-muted shrink-0 font-mono">{method}</span>
+                                        <span className="text-xs font-mono text-text-secondary truncate">
+                                            https://score-kort.dk{previewUrl}
+                                        </span>
+                                    </div>
+                                    <button
+                                        onClick={handleSend}
+                                        disabled={isLoading}
+                                        className="px-4 py-1.5 bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold rounded-lg transition-colors disabled:opacity-50 shrink-0 cursor-pointer"
+                                    >
+                                        {isLoading ? "Sender…" : "Send forespørgsel →"}
+                                    </button>
+                                </div>
+
+                                {/* Network error */}
+                                {fetchError && (
+                                    <div className="bg-red-500/5 border border-red-500/20 rounded-lg p-3 text-xs text-red-400">
+                                        {fetchError}
+                                    </div>
+                                )}
+
+                                {/* Live response */}
+                                {liveResponse && (
+                                    <div className="border border-border rounded-xl overflow-hidden">
+                                        <div className={`px-3 py-2 flex items-center gap-3 ${statusBadgeClass(liveResponse.status)}`}>
+                                            <span className="font-bold text-xs font-mono">
+                                                {liveResponse.status} {liveResponse.statusText}
+                                            </span>
+                                            <span className="text-xs opacity-70">{liveResponse.timeMs} ms</span>
+                                        </div>
+                                        <JsonViewer data={liveResponse.data} />
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            )}
-            <div>
-                <h4 className="text-xs font-bold uppercase text-text-muted mb-2 tracking-wider">Curl-eksempel</h4>
-                <CodeBlock>{curlExample}</CodeBlock>
-            </div>
-            <div>
-                <h4 className="text-xs font-bold uppercase text-text-muted mb-2 tracking-wider">Eksempel på svar</h4>
-                <CodeBlock>{responseExample}</CodeBlock>
             </div>
         </div>
     );
 }
+
+// ─── Page layout helpers ──────────────────────────────────────────────────────
 
 const navItems = [
     { href: "#quickstart", label: "Kom godt i gang" },
@@ -126,7 +474,12 @@ function GroupHeading({ id, children }: { id: string; children: React.ReactNode 
     );
 }
 
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
 export default function ApiDocsPage() {
+    const [token, setToken] = useState("");
+    const [tokenVisible, setTokenVisible] = useState(false);
+
     return (
         <div className="animate-in max-w-5xl mx-auto py-10 px-4">
             <SEO
@@ -168,39 +521,32 @@ export default function ApiDocsPage() {
                     {/* 1. Kom godt i gang */}
                     <section>
                         <SectionHeading num={1} id="quickstart">Kom godt i gang</SectionHeading>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                            <div className="bg-surface-card border border-border rounded-2xl p-5">
-                                <h3 className="font-bold mb-2 flex items-center gap-2">
-                                    <span className="text-brand-400">①</span> Hent en token
-                                </h3>
-                                <p className="text-sm text-text-secondary mb-3">
-                                    Tokens udstedes manuelt. Send en kort beskrivelse af dit projekt til:
-                                </p>
-                                <a
-                                    href="mailto:admin@score-kort.dk"
-                                    className="text-brand-400 hover:underline text-sm font-mono"
-                                >
-                                    admin@score-kort.dk
-                                </a>
-                                <p className="text-xs text-text-muted mt-3">
-                                    Gratis til ikke-kommercielle formål. Vi udsteder tokens manuelt for at undgå misbrug.
+                        <div className="bg-surface-card border border-border rounded-2xl p-6 space-y-5">
+                            <div>
+                                <h3 className="text-sm font-semibold mb-1 text-text-primary">Base URL</h3>
+                                <p className="text-sm text-text-secondary">
+                                    Alle endpoints er relative til{" "}
+                                    <code className="font-mono text-brand-400">https://score-kort.dk</code>
                                 </p>
                             </div>
-                            <div className="bg-surface-card border border-border rounded-2xl p-5">
-                                <h3 className="font-bold mb-2 flex items-center gap-2">
-                                    <span className="text-brand-400">②</span> Test med det samme
-                                </h3>
+                            <div className="border-t border-border pt-5">
+                                <h3 className="text-sm font-semibold mb-1 text-text-primary">Hent en token</h3>
+                                <p className="text-sm text-text-secondary mb-2">
+                                    Send en kort beskrivelse af dit projekt til{" "}
+                                    <a href="mailto:admin@score-kort.dk" className="text-brand-400 hover:underline">
+                                        admin@score-kort.dk
+                                    </a>
+                                    {" "}— vi udsteder tokens manuelt. Gratis til ikke-kommercielle formål.
+                                </p>
+                            </div>
+                            <div className="border-t border-border pt-5">
+                                <h3 className="text-sm font-semibold mb-2 text-text-primary">Hurtig test</h3>
                                 <p className="text-sm text-text-secondary mb-3">
-                                    Når du har din token, kan du teste API'et direkte fra terminalen:
+                                    Når du har din token, kan du teste direkte fra terminalen:
                                 </p>
                                 <CodeBlock>{`curl -H "Authorization: Bearer DIN_TOKEN" \\
   "https://score-kort.dk/api/clubs?limit=5"`}</CodeBlock>
                             </div>
-                        </div>
-                        <div className="bg-surface-2 border border-border rounded-xl p-4 text-sm text-text-secondary">
-                            <strong className="text-text-primary">Base URL:</strong>{" "}
-                            <code className="font-mono text-brand-400">https://score-kort.dk</code>
-                            {" "}— alle endpoints er relative til denne adresse.
                         </div>
                     </section>
 
@@ -214,7 +560,8 @@ export default function ApiDocsPage() {
                             <div className="space-y-4">
                                 <div>
                                     <h3 className="text-sm font-semibold mb-2 text-text-primary">
-                                        1. Authorization header <span className="text-xs text-brand-400 font-normal ml-1">(anbefalet)</span>
+                                        1. Authorization header{" "}
+                                        <span className="text-xs text-brand-400 font-normal ml-1">(anbefalet)</span>
                                     </h3>
                                     <CodeBlock>{`Authorization: Bearer DIN_TOKEN_HER`}</CodeBlock>
                                 </div>
@@ -234,8 +581,10 @@ export default function ApiDocsPage() {
                         <SectionHeading num={3} id="rate-limit">Hastighedsbegrænsning</SectionHeading>
                         <div className="bg-surface-card border border-border rounded-2xl p-6 space-y-4">
                             <p className="text-sm text-text-secondary">
-                                API'et er begrænset til <strong className="text-text-primary">60 forespørgsler per minut</strong> per IP-adresse.
-                                Ved overskridelse returneres en <code className="font-mono text-amber-700">429 Too Many Requests</code>-fejl.
+                                API'et er begrænset til{" "}
+                                <strong className="text-text-primary">60 forespørgsler per minut</strong> per IP-adresse.
+                                Ved overskridelse returneres en{" "}
+                                <code className="font-mono text-amber-700">429 Too Many Requests</code>-fejl.
                             </p>
                             <div>
                                 <h4 className="text-xs font-bold uppercase text-text-muted mb-2 tracking-wider">Svar-headers</h4>
@@ -288,10 +637,39 @@ export default function ApiDocsPage() {
                     <section>
                         <SectionHeading num={5} id="endpoints">Endpoints</SectionHeading>
 
+                        {/* Token input */}
+                        <div className="mb-8 bg-surface-2 border border-border rounded-xl p-4">
+                            <label className="text-xs font-bold uppercase tracking-wider text-text-muted mb-2 block">
+                                Din API Token
+                            </label>
+                            <div className="flex items-center gap-3">
+                                <input
+                                    type={tokenVisible ? "text" : "password"}
+                                    value={token}
+                                    onChange={(e) => setToken(e.target.value.trim())}
+                                    placeholder="Indsæt din token for at aktivere live-kald…"
+                                    className="flex-1 bg-surface-card border border-border rounded-lg px-3 py-2 text-sm font-mono text-text-primary placeholder:text-text-muted focus:outline-none focus:border-brand-500 transition-colors"
+                                />
+                                <button
+                                    onClick={() => setTokenVisible((v) => !v)}
+                                    className="text-xs text-text-muted hover:text-text-secondary transition-colors px-2 py-2 shrink-0"
+                                >
+                                    {tokenVisible ? "Skjul" : "Vis"}
+                                </button>
+                                {token && (
+                                    <span className="text-xs text-brand-600 font-semibold shrink-0">✓ Klar</span>
+                                )}
+                            </div>
+                            <p className="text-xs text-text-muted mt-2">
+                                Bruges i "Prøv det selv" på hvert endpoint. Fra score-kort.dk virker kald også uden token.
+                            </p>
+                        </div>
+
                         {/* Klubber */}
                         <GroupHeading id="klubber">Klubber</GroupHeading>
-                        <div className="space-y-6">
+                        <div className="space-y-3">
                             <EndpointCard
+                                token={token}
                                 method="GET"
                                 path="/api/clubs"
                                 description="Henter en pagineret liste over alle golfklubber. Understøtter fritekst-søgning på navn og by."
@@ -320,6 +698,7 @@ export default function ApiDocsPage() {
 }`}
                             />
                             <EndpointCard
+                                token={token}
                                 method="GET"
                                 path="/api/clubs/:clubId"
                                 description="Henter detaljer om en enkelt klub inklusiv en liste over dens baner."
@@ -327,7 +706,7 @@ export default function ApiDocsPage() {
                                     { type: "path", name: "clubId", required: true, description: "Klubbens unikke ID" },
                                 ]}
                                 curlExample={`curl -H "Authorization: Bearer DIN_TOKEN" \\
-  "https://score-kort.dk/api/clubs/42"`}
+  "https://score-kort.dk/api/clubs/50"`}
                                 responseExample={`{
   "club_id": 50,
   "club_name": "Hedeland Golfklub",
@@ -352,8 +731,9 @@ export default function ApiDocsPage() {
 
                         {/* Baner */}
                         <GroupHeading id="baner">Baner</GroupHeading>
-                        <div className="space-y-6">
+                        <div className="space-y-3">
                             <EndpointCard
+                                token={token}
                                 method="GET"
                                 path="/api/courses/:courseId"
                                 description="Henter detaljerede oplysninger om en bane inklusiv alle huller og tilgængelige tees."
@@ -425,6 +805,7 @@ export default function ApiDocsPage() {
 }`}
                             />
                             <EndpointCard
+                                token={token}
                                 method="GET"
                                 path="/api/courses/:courseId/tees"
                                 description="Henter alle tees for en bane med slope, course rating og farve."
@@ -480,6 +861,7 @@ export default function ApiDocsPage() {
 }`}
                             />
                             <EndpointCard
+                                token={token}
                                 method="GET"
                                 path="/api/courses/:courseId/full_scorecard"
                                 description="Returnerer alle data til en traditionel scorekorttabel — alle tees og alle huller med længder for hver tee samlet i ét kald."
@@ -550,11 +932,12 @@ export default function ApiDocsPage() {
 
                         {/* Scorekort */}
                         <GroupHeading id="scorekort">Scorekort</GroupHeading>
-                        <div className="space-y-6">
+                        <div className="space-y-3">
                             <EndpointCard
+                                token={token}
                                 method="GET"
                                 path="/api/scorecard"
-                                description="Henter et komplet scorekort for én specifik tee — inklusiv baneinformation, huldata, længder og alle øvrige tees på banen (til tee-skift). tee_key findes via /api/courses/:courseId/tees eller /full_scorecard."
+                                description="Henter et komplet scorekort for én specifik tee — inklusiv baneinformation, huldata, længder og alle øvrige tees på banen. tee_key findes via /api/courses/:courseId/tees eller /full_scorecard."
                                 params={[
                                     { type: "query", name: "tee_key", required: true, description: "Den unikke nøgle for en tee — hentes fra /tees eller /full_scorecard, f.eks. \"101_1012\"" },
                                 ]}
@@ -630,11 +1013,12 @@ export default function ApiDocsPage() {
 
                         {/* Anmodninger */}
                         <GroupHeading id="anmodninger">Anmodninger</GroupHeading>
-                        <div className="space-y-6">
+                        <div className="space-y-3">
                             <EndpointCard
+                                token={token}
                                 method="POST"
                                 path="/api/requests"
-                                description="Send en anmodning om at tilføje en manglende klub/bane eller rette fejl i eksisterende data. Bruges af vores eget website og kan bruges af integrationer til at rapportere mangler."
+                                description="Send en anmodning om at tilføje en manglende klub/bane eller rette fejl i eksisterende data."
                                 params={[
                                     { type: "body", name: "type", required: true, description: "Anmodningstype, f.eks. \"missing_club\" eller \"correction\"" },
                                     { type: "body", name: "user_message", required: true, description: "Beskrivelse af anmodningen" },
@@ -643,6 +1027,7 @@ export default function ApiDocsPage() {
                                     { type: "body", name: "tee_key", required: false, description: "Tee-nøgle (hvis relevant)" },
                                     { type: "body", name: "user_contact", required: false, description: "Kontaktoplysninger (e-mail), hvis du ønsker svar" },
                                 ]}
+                                defaultBody={`{\n  "type": "missing_club",\n  "user_message": "Beskriv din anmodning her",\n  "user_contact": "din@email.dk"\n}`}
                                 curlExample={`curl -X POST \\
   -H "Authorization: Bearer DIN_TOKEN" \\
   -H "Content-Type: application/json" \\
