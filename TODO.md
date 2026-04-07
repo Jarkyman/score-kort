@@ -15,6 +15,14 @@
 - [x] **Basis Tags i index.html:** Udfyld `index.html` med statiske fallback Open Graph/Twitter tags, og et relevant preview billede til forsiden.
 - [x] **Struktureret Data (JSON-LD):** Tilføj "Schema markup" på `ClubDetailPage` (fx som `SportsActivityLocation`), for at forbedre klubbernes rige søgeresultater på Google med adressedata mv.
 
+## API
+- [x] **Cloudflare KV Opsætning:** Opret et `API_KEYS` KV Namespace i Cloudflare Dashboard til validering af unikke tokens.
+- [x] **Middleware/Validering:** Implementer tjek af `Authorization` header i Cloudflare Functions for at tillade/afvise adgang baseret på KV data.
+- [x] **Test af Tokens:** Verificer at API'et afviser forespørgsler uden gyldig token og accepterer dem med en gyldig token fra KV.
+- [x] **Skjult API Side:** Opret en `/api-docs` (eller lignende skjult sti) page, der forklarer hvordan man bruger og får sit token.
+- [x] **API Dokumentation:** Beskriv endpoints, JSON-formater og fejlkoder på den skjulte side (f.eks. ved hjælp af et simpelt Swagger-lignende interface).
+
+
 ## Future / Post-Launch
 - [ ] Implement Admin Interface (for reviewing change requests)
 - [ ] Add google ads (AdSense) (when site is live)

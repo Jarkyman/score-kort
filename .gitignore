@@ -29,3 +29,6 @@ wrangler-*.log
 # Golf data
 csv-files/
 db/scorekort_seed.sql
+
+# Documentation
+docs/pentest_security_rapport.md

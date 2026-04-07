@@ -8,7 +8,7 @@ const FEATURES = [
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 21h18M9 21V8l-4 4V21M15 21V4l4 4V21M9 8l6-4" />
             </svg>
         ),
-        title: "187+ Golfklubber",
+        title: "180+ Golfklubber",
         description: "Komplet oversigt over alle danske golfklubber med adresser og baneoplysninger.",
     },
     {
@@ -34,9 +34,9 @@ const FEATURES = [
 ];
 
 const STATS = [
-    { value: "187+", label: "Golfklubber" },
-    { value: "350+", label: "Baner" },
-    { value: "100%", label: "Gratis" },
+    { value: "180+", label: "Klubber" },
+    { value: "950+", label: "Baner" },
+    { value: "3.000+", label: "Teesteder" },
 ];
 
 export default function HomePage() {
@@ -123,7 +123,7 @@ export default function HomePage() {
                 <div className="bottom-cta-card">
                     <h2 className="bottom-cta-title">Klar til at finde din bane?</h2>
                     <p className="bottom-cta-text">
-                        Søg blandt 187+ danske golfklubber og find alle banedetaljer.
+                        Søg blandt 180+ danske golfklubber og find alle banedetaljer.
                     </p>
                     <Link to="/klubber" className="hero-cta">
                         Udforsk alle klubber
