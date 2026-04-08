@@ -6,8 +6,8 @@ import { jsonResponse, errorResponse } from "../../_shared";
  * Lists all courses for a given club.
  */
 export const onRequestGet: PagesFunction<Env> = async ({ request, params, env }) => {
-    const clubId = params["clubId"];
-    const parsedId = typeof clubId === "string" ? parseInt(clubId, 10) : Number(clubId);
+    const clubIdNum = parseInt(params["clubId"] as string, 10);
+    if (isNaN(clubIdNum)) return errorResponse("Invalid club ID", 400);
 
     try {
         const courses = await env.DB.prepare(
@@ -19,13 +19,13 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, params, env })
        GROUP BY c.course_id
        ORDER BY c.course_name`
         )
-            .bind(clubId)
+            .bind(clubIdNum)
             .all();
 
         return jsonResponse({
-            club_id: parsedId,
+            club_id: clubIdNum,
             courses: courses.results || []
-        }, 200, 300, request.headers.get("Origin"));
+        }, 200, 300, request.headers.get("Origin"), env.ENVIRONMENT);
     } catch (e) {
         return errorResponse("Database error: " + (e instanceof Error ? e.message : String(e)), 500);
     }

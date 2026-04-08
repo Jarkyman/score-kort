@@ -6,7 +6,8 @@ import { jsonResponse, errorResponse } from "../_shared";
  * Returns course details with holes and available tees.
  */
 export const onRequestGet: PagesFunction<Env> = async ({ request, params, env }) => {
-    const courseId = params["courseId"];
+    const courseIdNum = parseInt(params["courseId"] as string, 10);
+    if (isNaN(courseIdNum)) return errorResponse("Invalid course ID", 400);
 
     try {
         const course = await env.DB.prepare(
@@ -15,7 +16,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, params, env })
        JOIN clubs cl ON cl.club_id = c.club_id
        WHERE c.course_id = ?1`
         )
-            .bind(courseId)
+            .bind(courseIdNum)
             .first();
 
         if (!course) {
@@ -25,21 +26,21 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, params, env })
         const holes = await env.DB.prepare(
             `SELECT * FROM holes WHERE course_id = ?1 ORDER BY hole_no`
         )
-            .bind(courseId)
+            .bind(courseIdNum)
             .all();
 
         const tees = await env.DB.prepare(
             `SELECT tee_key, tee_name, tee_color, slope, cr, slope_women, cr_women
        FROM tees WHERE course_id = ?1 ORDER BY tee_name`
         )
-            .bind(courseId)
+            .bind(courseIdNum)
             .all();
 
         return jsonResponse({
             ...course,
             holes: holes.results || [],
             tees: tees.results || []
-        }, 200, 300, request.headers.get("Origin"));
+        }, 200, 300, request.headers.get("Origin"), env.ENVIRONMENT);
     } catch (e) {
         return errorResponse("Database error: " + (e instanceof Error ? e.message : String(e)), 500);
     }

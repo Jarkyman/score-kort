@@ -9,7 +9,8 @@ import { jsonResponse, errorResponse } from "../../_shared";
  * - Holes 1-18 with par, hcp, and lengths for EVERY tee
  */
 export const onRequestGet: PagesFunction<Env> = async ({ request, params, env }) => {
-    const courseId = params["courseId"];
+    const courseIdNum = parseInt(params["courseId"] as string, 10);
+    if (isNaN(courseIdNum)) return errorResponse("Invalid course ID", 400);
 
     try {
         // 1. Get Course Info
@@ -19,7 +20,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, params, env })
              JOIN clubs cl ON cl.club_id = c.club_id
              WHERE c.course_id = ?1`
         )
-            .bind(courseId)
+            .bind(courseIdNum)
             .first();
 
         if (!course) {
@@ -33,7 +34,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, params, env })
              WHERE course_id = ?1
              ORDER BY tee_name` // You might want a better sort order (e.g. length) but name is okay for now
         )
-            .bind(courseId)
+            .bind(courseIdNum)
             .all();
 
         const tees = teesVec.results || [];
@@ -45,7 +46,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, params, env })
              WHERE course_id = ?1
              ORDER BY hole_no`
         )
-            .bind(courseId)
+            .bind(courseIdNum)
             .all();
 
         const holes = holesVec.results || [];
@@ -58,7 +59,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, params, env })
              JOIN tees t ON t.tee_key = tl.tee_key
              WHERE t.course_id = ?1`
         )
-            .bind(courseId)
+            .bind(courseIdNum)
             .all();
 
         const allLengths = lengthsVec.results || [];
@@ -89,7 +90,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, params, env })
             course,
             tees,
             holes: holesWithLengths
-        }, 200, 300, request.headers.get("Origin"));
+        }, 200, 300, request.headers.get("Origin"), env.ENVIRONMENT);
     } catch (e) {
         return errorResponse("Database error: " + (e instanceof Error ? e.message : String(e)), 500);
     }

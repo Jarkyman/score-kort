@@ -66,7 +66,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
             holes: holes.results,
             lengths: lengths.results,
             allTees: allTees.results,
-        }, 200, 600, request.headers.get("Origin"));
+        }, 200, 600, request.headers.get("Origin"), env.ENVIRONMENT);
     } catch (e) {
         return errorResponse("Database error: " + (e instanceof Error ? e.message : String(e)), 500);
     }

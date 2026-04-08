@@ -8,8 +8,10 @@ import { jsonResponse, errorResponse } from "../_shared";
 export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
     const url = new URL(request.url);
     const q = url.searchParams.get("q")?.trim() ?? "";
-    const page = Math.max(1, parseInt(url.searchParams.get("page") ?? "1", 10));
-    const limit = Math.min(1000, Math.max(1, parseInt(url.searchParams.get("limit") ?? "20", 10)));
+    const pageRaw = parseInt(url.searchParams.get("page") ?? "1", 10);
+    const limitRaw = parseInt(url.searchParams.get("limit") ?? "20", 10);
+    const page = Math.max(1, isNaN(pageRaw) ? 1 : pageRaw);
+    const limit = Math.min(1000, Math.max(1, isNaN(limitRaw) ? 20 : limitRaw));
     const offset = (page - 1) * limit;
 
     try {
@@ -45,7 +47,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
                 total,
                 totalPages: Math.ceil(total / limit),
             },
-        }, 200, 300, request.headers.get("Origin"));
+        }, 200, 300, request.headers.get("Origin"), env.ENVIRONMENT);
     } catch (e) {
         return errorResponse("Database error: " + (e instanceof Error ? e.message : String(e)), 500);
     }
