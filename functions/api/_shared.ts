@@ -4,16 +4,22 @@
 export interface Env {
     DB: D1Database;
     API_KEYS: KVNamespace;
+    ENVIRONMENT?: string;
 }
 
 /**
  * JSON helper — returns a Response with JSON content-type and caching headers.
  */
-export function jsonResponse(data: unknown, status = 200, cacheSecs = 300, requestOrigin?: string | null): Response {
-    // Basic CORS handling - allow only localhost or the production domain
+export function jsonResponse(data: unknown, status = 200, cacheSecs = 300, requestOrigin?: string | null, environment?: string): Response {
+    // Basic CORS handling - allow only localhost (non-production only) or the production domain
     let allowedOrigin = "";
     if (requestOrigin) {
-        if (requestOrigin.startsWith("http://localhost") || requestOrigin.endsWith(".pages.dev") || requestOrigin === "https://score-kort.dk") {
+        const isProduction = environment === "production";
+        if (
+            (!isProduction && requestOrigin.startsWith("http://localhost")) ||
+            requestOrigin.endsWith(".pages.dev") ||
+            requestOrigin === "https://score-kort.dk"
+        ) {
             allowedOrigin = requestOrigin;
         }
     }

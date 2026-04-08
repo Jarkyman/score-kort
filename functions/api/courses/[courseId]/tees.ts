@@ -6,20 +6,20 @@ import { jsonResponse, errorResponse } from "../../_shared";
  * Returns all tees for a course with their length data.
  */
 export const onRequestGet: PagesFunction<Env> = async ({ request, params, env }) => {
-    const courseId = params["courseId"];
-    const parsedId = typeof courseId === "string" ? parseInt(courseId, 10) : Number(courseId);
+    const courseIdNum = parseInt(params["courseId"] as string, 10);
+    if (isNaN(courseIdNum)) return errorResponse("Invalid course ID", 400);
 
     try {
         const tees = await env.DB.prepare(
             `SELECT * FROM tees WHERE course_id = ?1 ORDER BY tee_name`
         )
-            .bind(courseId)
+            .bind(courseIdNum)
             .all();
 
         return jsonResponse({
-            course_id: parsedId,
+            course_id: courseIdNum,
             tees: tees.results || []
-        }, 200, 300, request.headers.get("Origin"));
+        }, 200, 300, request.headers.get("Origin"), env.ENVIRONMENT);
     } catch (e) {
         return errorResponse("Database error: " + (e instanceof Error ? e.message : String(e)), 500);
     }

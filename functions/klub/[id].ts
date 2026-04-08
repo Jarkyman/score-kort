@@ -32,12 +32,15 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env, next, par
     const clubId = params.id as string;
     if (!clubId) return response;
 
+    const clubIdNum = parseInt(clubId, 10);
+    if (isNaN(clubIdNum)) return response;
+
     let clubName = "Golfklub";
     let city = "";
 
     try {
         const club = await env.DB.prepare("SELECT club_name, city FROM clubs WHERE club_id = ?")
-            .bind(parseInt(clubId, 10))
+            .bind(clubIdNum)
             .first<{ club_name: string; city: string | null }>();
 
         if (club) {
@@ -56,7 +59,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env, next, par
     return new HTMLRewriter()
         .on("title", {
             element(element) {
-                element.setInnerContent(title);
+                element.setInnerContent(title, { html: false });
             }
         })
         .on("meta[name='description']", {
