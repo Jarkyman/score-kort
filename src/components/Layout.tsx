@@ -1,4 +1,5 @@
 import { Link, Outlet, useLocation } from "react-router-dom";
+import CookieBanner from "./CookieBanner";
 
 const NAV_ITEMS = [
     { to: "/klubber", label: "Klubber" },
@@ -52,6 +53,8 @@ export default function Layout() {
                     © {new Date().getFullYear()} score-kort.dk
                 </div>
             </footer>
+            {/* Cookie Consent Banner */}
+            <CookieBanner />
         </div>
     );
 }
