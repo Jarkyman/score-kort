@@ -1,5 +1,5 @@
 import type { Env } from "../../_shared";
-import { jsonResponse, errorResponse } from "../../_shared";
+import { jsonResponse, errorResponse, cacheKey, getCached, setCached } from "../../_shared";
 
 /**
  * GET /api/courses/:courseId/full_scorecard
@@ -11,6 +11,13 @@ import { jsonResponse, errorResponse } from "../../_shared";
 export const onRequestGet: PagesFunction<Env> = async ({ request, params, env }) => {
     const courseIdNum = parseInt(params["courseId"] as string, 10);
     if (isNaN(courseIdNum)) return errorResponse("Invalid course ID", 400);
+
+    const reqUrl = new URL(request.url);
+    const key = cacheKey(reqUrl.pathname, reqUrl.searchParams);
+    const cached = await getCached(env.SCORE_CACHE, key);
+    if (cached !== null) {
+        return jsonResponse(cached, 200, 21600, request.headers.get("Origin"), env.ENVIRONMENT);
+    }
 
     try {
         // 1. Get Course Info
@@ -49,7 +56,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, params, env })
             .bind(courseIdNum)
             .all();
 
-        const holes = holesVec.results || [];
+        const holes = (holesVec.results || []) as unknown as HoleData[];
 
         // 4. Get All Tee Lengths
         // We fetch all lengths for this course and pivot them in JS
@@ -62,21 +69,35 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, params, env })
             .bind(courseIdNum)
             .all();
 
-        const allLengths = lengthsVec.results || [];
+        const allLengths = (lengthsVec.results || []) as unknown as LengthData[];
 
         // 5. Structure the data: Hole -> { par, hcp, lengths: { tee_key: length } }
         const holeMap = new Map();
 
+        interface HoleData {
+            hole_no: number;
+            par: number;
+            hcp: number;
+            match_index: number | null;
+            split_index: number | null;
+        }
+
+        interface LengthData {
+            hole_no: number;
+            length: number;
+            tee_key: string;
+        }
+
         // Initialize with hole data
-        holes.forEach((h: any) => {
+        holes.forEach((h: HoleData) => {
             holeMap.set(h.hole_no, {
                 ...h,
-                lengths: {} // map of tee_key -> length
+                lengths: {} as Record<string, number> // map of tee_key -> length
             });
         });
 
         // Populate lengths
-        allLengths.forEach((l: any) => {
+        allLengths.forEach((l: LengthData) => {
             const h = holeMap.get(l.hole_no);
             if (h) {
                 h.lengths[l.tee_key] = l.length;
@@ -86,12 +107,17 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, params, env })
         // Convert map to array sorted by hole_no
         const holesWithLengths = Array.from(holeMap.values()).sort((a, b) => a.hole_no - b.hole_no);
 
-        return jsonResponse({
+        const responseData = {
             course,
             tees,
             holes: holesWithLengths
-        }, 200, 300, request.headers.get("Origin"), env.ENVIRONMENT);
+        };
+        await setCached(env.SCORE_CACHE, key, responseData, 21600);
+        return jsonResponse(responseData, 200, 21600, request.headers.get("Origin"), env.ENVIRONMENT);
     } catch (e) {
-        return errorResponse("Database error: " + (e instanceof Error ? e.message : String(e)), 500);
+        const errorMsg = env.ENVIRONMENT !== "production" 
+            ? (e instanceof Error ? e.message : String(e))
+            : "An unexpected database error occurred.";
+        return errorResponse("Database error: " + errorMsg, 500);
     }
 };

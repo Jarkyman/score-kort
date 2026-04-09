@@ -1,5 +1,5 @@
 import type { Env } from "./_shared";
-import { jsonResponse, errorResponse } from "./_shared";
+import { jsonResponse, errorResponse, cacheKey, getCached, setCached } from "./_shared";
 
 /**
  * GET /api/scorecard?tee_key=...
@@ -12,6 +12,12 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
 
     if (!teeKey) {
         return errorResponse("Missing required parameter: tee_key", 400);
+    }
+
+    const key = cacheKey(url.pathname, url.searchParams);
+    const cached = await getCached(env.SCORE_CACHE, key);
+    if (cached !== null) {
+        return jsonResponse(cached, 200, 3600, request.headers.get("Origin"), env.ENVIRONMENT);
     }
 
     try {
@@ -60,14 +66,19 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
             .bind(courseId)
             .all();
 
-        return jsonResponse({
+        const responseData = {
             course,
             tee,
             holes: holes.results,
             lengths: lengths.results,
             allTees: allTees.results,
-        }, 200, 600, request.headers.get("Origin"), env.ENVIRONMENT);
+        };
+        await setCached(env.SCORE_CACHE, key, responseData, 3600);
+        return jsonResponse(responseData, 200, 3600, request.headers.get("Origin"), env.ENVIRONMENT);
     } catch (e) {
-        return errorResponse("Database error: " + (e instanceof Error ? e.message : String(e)), 500);
+        const errorMsg = env.ENVIRONMENT !== "production" 
+            ? (e instanceof Error ? e.message : String(e))
+            : "An unexpected database error occurred.";
+        return errorResponse("Database error: " + errorMsg, 500);
     }
 };

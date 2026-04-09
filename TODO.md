@@ -27,17 +27,17 @@
 > Disse fixes er identificeret i code review men vurderet ikke-blokerende for PR. Tag dem i næste iteration.
 
 ### Minor
-- [ ] **OPTIONS CORS bør være origin-specifik** (`_middleware.ts` linje ~19): Preflight returnerer `Access-Control-Allow-Origin: *`. Bør validere origin på samme måde som `jsonResponse`, så wildcard ikke gives til ukendte origins.
-- [ ] **Fjern interne fejlbeskeder i produktion** (alle endpoints): `catch (e) { return errorResponse("Database error: " + e.message) }` lækker intern schema-info til klienten i produktion. Bør returnere generisk besked i prod og kun vise details i dev (check `env.ENVIRONMENT`).
-- [ ] **Input-størrelsesvalidering på POST /api/requests** (`requests.ts`): `user_message` og `user_contact` har ingen maksimal længde. Tilføj fx `MAX_MESSAGE_LENGTH = 5000` og `MAX_CONTACT_LENGTH = 500` for at forebygge store payloads i databasen.
+- [x] **OPTIONS CORS bør være origin-specifik** (`_middleware.ts` linje ~19): Preflight returnerer `Access-Control-Allow-Origin: *`. Bør validere origin på samme måde som `jsonResponse`, så wildcard ikke gives til ukendte origins.
+- [x] **Fjern interne fejlbeskeder i produktion** (alle endpoints): `catch (e) { return errorResponse("Database error: " + e.message) }` lækker intern schema-info til klienten i produktion. Bør returnere generisk besked i prod og kun vise details i dev (check `env.ENVIRONMENT`).
+- [x] **Input-størrelsesvalidering på POST /api/requests** (`requests.ts`): `user_message` og `user_contact` har ingen maksimal længde. Tilføj fx `MAX_MESSAGE_LENGTH = 5000` og `MAX_CONTACT_LENGTH = 500` for at forebygge store payloads i databasen.
 
 ### Nit
-- [ ] **Skriv typer på database-resultater i `full_scorecard.ts`** (linje ~70): `holes.forEach((h: any) => ...)` og `allLengths.forEach((l: any) => ...)` bør have eksplicitte interfaces i stedet for `any`, så TypeScript fanger schema-ændringer.
-- [ ] **Reducér logging i produktion** (`klub/[id].ts` linje ~51): `console.error(...)` i catch-blokken logger altid — overvej at begrænse til `env.ENVIRONMENT !== "production"` eller log kun en generisk besked.
+- [x] **Skriv typer på database-resultater i `full_scorecard.ts`** (linje ~70): `holes.forEach((h: any) => ...)` og `allLengths.forEach((l: any) => ...)` bør have eksplicitte interfaces i stedet for `any`, så TypeScript fanger schema-ændringer.
+- [x] **Reducér logging i produktion** (`klub/[id].ts` linje ~51): `console.error(...)` i catch-blokken logger altid — overvej at begrænse til `env.ENVIRONMENT !== "production"` eller log kun en generisk besked.
 
 ## Future / Post-Launch
 - [ ] Implement Admin Interface (for reviewing change requests)
-- [ ] Add google ads (AdSense) (when site is live)
-- [ ] Add cookie compliance (when site is live)
-- [ ] Caching, so we do not need to call api all the time
+- [x] Add google ads (AdSense) (when site is live)
+- [x] Add cookie compliance (when site is live)
+- [x] Caching, so we do not need to call api all the time
 - [ ] Can we make a puplic api for the data? and can we sell it to other sites?
