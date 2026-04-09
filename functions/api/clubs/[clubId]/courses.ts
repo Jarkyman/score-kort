@@ -1,5 +1,5 @@
 import type { Env } from "../../_shared";
-import { jsonResponse, errorResponse } from "../../_shared";
+import { jsonResponse, errorResponse, cacheKey, getCached, setCached } from "../../_shared";
 
 /**
  * GET /api/clubs/:clubId/courses
@@ -8,6 +8,13 @@ import { jsonResponse, errorResponse } from "../../_shared";
 export const onRequestGet: PagesFunction<Env> = async ({ request, params, env }) => {
     const clubIdNum = parseInt(params["clubId"] as string, 10);
     if (isNaN(clubIdNum)) return errorResponse("Invalid club ID", 400);
+
+    const reqUrl = new URL(request.url);
+    const key = cacheKey(reqUrl.pathname, reqUrl.searchParams);
+    const cached = await getCached(env.SCORE_CACHE, key);
+    if (cached !== null) {
+        return jsonResponse(cached, 200, 3600, request.headers.get("Origin"), env.ENVIRONMENT);
+    }
 
     try {
         const courses = await env.DB.prepare(
@@ -22,10 +29,12 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, params, env })
             .bind(clubIdNum)
             .all();
 
-        return jsonResponse({
+        const responseData = {
             club_id: clubIdNum,
             courses: courses.results || []
-        }, 200, 300, request.headers.get("Origin"), env.ENVIRONMENT);
+        };
+        await setCached(env.SCORE_CACHE, key, responseData, 3600);
+        return jsonResponse(responseData, 200, 3600, request.headers.get("Origin"), env.ENVIRONMENT);
     } catch (e) {
         const errorMsg = env.ENVIRONMENT !== "production" 
             ? (e instanceof Error ? e.message : String(e))

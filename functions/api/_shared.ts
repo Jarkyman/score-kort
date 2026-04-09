@@ -4,6 +4,7 @@
 export interface Env {
     DB: D1Database;
     API_KEYS: KVNamespace;
+    SCORE_CACHE: KVNamespace;
     ENVIRONMENT?: string;
 }
 
@@ -53,4 +54,26 @@ export function errorResponse(message: string, status = 400): Response {
             "Access-Control-Allow-Origin": "*", // Allow cross-origin for errors for debugging, or restrict similarly
         },
     });
+}
+
+const CACHE_VERSION = "v1";
+
+export async function getCached(kv: KVNamespace, key: string): Promise<unknown | null> {
+    const raw = await kv.get(key, "json");
+    return raw ?? null;
+}
+
+export async function setCached(
+    kv: KVNamespace,
+    key: string,
+    data: unknown,
+    ttlSeconds: number
+): Promise<void> {
+    await kv.put(key, JSON.stringify(data), { expirationTtl: ttlSeconds });
+}
+
+export function cacheKey(urlPath: string, searchParams: URLSearchParams): string {
+    const sorted = new URLSearchParams([...searchParams.entries()].sort());
+    const qs = sorted.toString();
+    return `${CACHE_VERSION}:${urlPath}${qs ? "?" + qs : ""}`;
 }

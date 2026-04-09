@@ -11,5 +11,10 @@ database_id = "32df5e07-9ddb-4358-bbb9-fe7a9396c3d8"
 binding = "API_KEYS"
 id = "04d4e9d4e7ae46fa8d805f482d501f72"
 
+[[kv_namespaces]]
+binding = "SCORE_CACHE"
+id = "583fab637a7c4311ba3fbe318f99a927"
+preview_id = "b9738eabad774b1d95bb8ff1d63fa98d"
+
 [vars]
 ENVIRONMENT = "production"

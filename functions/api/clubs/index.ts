@@ -1,5 +1,5 @@
 import type { Env } from "../_shared";
-import { jsonResponse, errorResponse } from "../_shared";
+import { jsonResponse, errorResponse, cacheKey, getCached, setCached } from "../_shared";
 
 /**
  * GET /api/clubs?q=...&page=1&limit=20
@@ -13,6 +13,12 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
     const page = Math.max(1, isNaN(pageRaw) ? 1 : pageRaw);
     const limit = Math.min(1000, Math.max(1, isNaN(limitRaw) ? 20 : limitRaw));
     const offset = (page - 1) * limit;
+
+    const key = cacheKey(url.pathname, url.searchParams);
+    const cached = await getCached(env.SCORE_CACHE, key);
+    if (cached !== null) {
+        return jsonResponse(cached, 200, 300, request.headers.get("Origin"), env.ENVIRONMENT);
+    }
 
     try {
         let countQuery: string;
@@ -39,7 +45,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
             .bind(...(q ? [params[0]!, limit, offset] : [limit, offset]))
             .all();
 
-        return jsonResponse({
+        const responseData = {
             clubs: dataResult.results,
             pagination: {
                 page,
@@ -47,7 +53,9 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
                 total,
                 totalPages: Math.ceil(total / limit),
             },
-        }, 200, 300, request.headers.get("Origin"), env.ENVIRONMENT);
+        };
+        await setCached(env.SCORE_CACHE, key, responseData, 300);
+        return jsonResponse(responseData, 200, 300, request.headers.get("Origin"), env.ENVIRONMENT);
     } catch (e) {
         const errorMsg = env.ENVIRONMENT !== "production" 
             ? (e instanceof Error ? e.message : String(e))
