@@ -49,6 +49,9 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
             },
         }, 200, 300, request.headers.get("Origin"), env.ENVIRONMENT);
     } catch (e) {
-        return errorResponse("Database error: " + (e instanceof Error ? e.message : String(e)), 500);
+        const errorMsg = env.ENVIRONMENT !== "production" 
+            ? (e instanceof Error ? e.message : String(e))
+            : "An unexpected database error occurred.";
+        return errorResponse("Database error: " + errorMsg, 500);
     }
 };

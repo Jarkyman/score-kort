@@ -48,7 +48,11 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env, next, par
             city = club.city ? ` i ${club.city}` : "";
         }
     } catch (e) {
-        console.error("DB error in frontend bot proxy", e);
+        if (env.ENVIRONMENT !== "production") {
+            console.error("DB error in frontend bot proxy", e);
+        } else {
+            console.error("DB error in frontend bot proxy: An error occurred.");
+        }
     }
 
     const title = `${clubName} - Scorekort | Score-kort.dk`;

@@ -29,6 +29,16 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
             return errorResponse("Missing required fields: type, user_message", 400);
         }
 
+        const MAX_MESSAGE_LENGTH = 5000;
+        const MAX_CONTACT_LENGTH = 500;
+
+        if (body.user_message.length > MAX_MESSAGE_LENGTH) {
+            return errorResponse(`Message too long. Maximum ${MAX_MESSAGE_LENGTH} characters allowed.`, 400);
+        }
+        if (body.user_contact && body.user_contact.length > MAX_CONTACT_LENGTH) {
+            return errorResponse(`Contact info too long. Maximum ${MAX_CONTACT_LENGTH} characters allowed.`, 400);
+        }
+
         const validTypes = ["correction", "missing_club", "other"];
         if (!validTypes.includes(body.type)) {
             return errorResponse(`Invalid type. Must be one of: ${validTypes.join(", ")}`, 400);
@@ -50,6 +60,9 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
 
         return jsonResponse({ success: true, message: "Tak for din indberetning!" }, 201, 0, request.headers.get("Origin"), env.ENVIRONMENT);
     } catch (e) {
-        return errorResponse("Server error: " + (e instanceof Error ? e.message : String(e)), 500);
+        const errorMsg = env.ENVIRONMENT !== "production" 
+            ? (e instanceof Error ? e.message : String(e))
+            : "An unexpected error occurred.";
+        return errorResponse("Server error: " + errorMsg, 500);
     }
 };

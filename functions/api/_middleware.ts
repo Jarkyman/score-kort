@@ -14,14 +14,33 @@ export const onRequest: PagesFunction<Env> = async (context) => {
 
     // Handle CORS preflight before auth and rate limiting
     if (request.method === "OPTIONS") {
+        const origin = request.headers.get("origin");
+        const isProduction = env.ENVIRONMENT === "production";
+        let allowedOrigin = "";
+
+        if (origin) {
+            if (
+                (!isProduction && origin.startsWith("http://localhost")) ||
+                origin.endsWith(".pages.dev") ||
+                origin === "https://score-kort.dk"
+            ) {
+                allowedOrigin = origin;
+            }
+        }
+
+        const headers: Record<string, string> = {
+            "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type, Authorization, x-api-key",
+            "Access-Control-Max-Age": "86400",
+        };
+
+        if (allowedOrigin) {
+            headers["Access-Control-Allow-Origin"] = allowedOrigin;
+        }
+
         return new Response(null, {
             status: 204,
-            headers: {
-                "Access-Control-Allow-Origin": "*",
-                "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-                "Access-Control-Allow-Headers": "Content-Type, Authorization, x-api-key",
-                "Access-Control-Max-Age": "86400",
-            },
+            headers,
         });
     }
 
